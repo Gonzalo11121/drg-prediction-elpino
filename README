@@ -1,0 +1,22 @@
+# DRG Prediction — Hospital El Pino
+**CINF104 Machine Learning · Grupo 5 · UNAB 2026**
+
+Integrantes: Anabalón · Arancibia · Martínez · Oregón · Sáez  
+Profesor: Pablo Schwarzenberg
+
+## Contenido
+| Archivo | Descripción |
+|---------|-------------|
+| `DRG_Prediction_ElPino_Full_Report.docx` | Informe completo Fase 1 |
+| `drg_paper.pdf` | Paper formato IEEE |
+| `drg_paper.tex` | Código fuente LaTeX (Overleaf) |
+| `index.html` | Chatbot NutriBot (Fase 2) |
+| `setup.sh` | Script instalación Ollama + Llama 3.2 |
+| `informe_pruebas_nutribot.pdf` | Informe de pruebas del chatbot |
+
+## Cómo usar el chatbot
+```bash
+bash setup.sh        # instala todo automáticamente
+python3 -m http.server 8080  # levanta servidor local
+# abrir http://localhost:8080
+```
