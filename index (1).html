@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>NutriBot — Recetas Saludables</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --green-deep:  #1a4a2e;
+    --green-mid:   #2d7a4f;
+    --green-soft:  #4caf7d;
+    --green-pale:  #e8f5ee;
+    --green-mist:  #f2faf5;
+    --cream:       #faf8f3;
+    --ink:         #1c1c1c;
+    --ink-muted:   #5a5a5a;
+    --ink-faint:   #9a9a9a;
+    --border:      #e0e8e2;
+    --shadow:      0 2px 16px rgba(26,74,46,0.08);
+    --radius:      16px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--cream);
+    color: var(--ink);
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* ── HEADER ─────────────────────────────────── */
+  header {
+    background: var(--green-deep);
+    padding: 14px 24px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-shrink: 0;
+    position: relative;
+    overflow: hidden;
+  }
+  header::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(
+      45deg, transparent, transparent 20px,
+      rgba(255,255,255,0.015) 20px, rgba(255,255,255,0.015) 40px
+    );
+  }
+  .header-icon {
+    width: 44px; height: 44px;
+    background: var(--green-soft);
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px;
+    flex-shrink: 0;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  }
+  .header-text h1 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 20px;
+    color: #fff;
+    letter-spacing: -0.3px;
+  }
+  .header-text p {
+    font-size: 12px;
+    color: rgba(255,255,255,0.6);
+    font-weight: 300;
+    margin-top: 1px;
+  }
+  .header-right {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .model-pill {
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 20px;
+    padding: 4px 12px;
+    font-size: 11px;
+    color: rgba(255,255,255,0.8);
+    font-weight: 500;
+  }
+  .status-dot {
+    width: 8px; height: 8px;
+    background: #4ade80;
+    border-radius: 50%;
+    box-shadow: 0 0 0 2px rgba(74,222,128,0.3);
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse { 0%,100%{box-shadow:0 0 0 2px rgba(74,222,128,0.3)} 50%{box-shadow:0 0 0 5px rgba(74,222,128,0.1)} }
+
+  /* ── CHAT AREA ──────────────────────────────── */
+  #chat {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    scroll-behavior: smooth;
+  }
+  #chat::-webkit-scrollbar { width: 4px; }
+  #chat::-webkit-scrollbar-track { background: transparent; }
+  #chat::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+  .msg { display: flex; gap: 10px; animation: fadeUp .3s ease; max-width: 780px; margin: 0 auto; width: 100%; }
+  .msg.user { flex-direction: row-reverse; }
+  @keyframes fadeUp { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+
+  .avatar {
+    width: 34px; height: 34px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; flex-shrink: 0; margin-top: 2px;
+  }
+  .avatar.bot { background: var(--green-pale); border: 1px solid var(--border); }
+  .avatar.user { background: var(--green-deep); }
+
+  .bubble {
+    max-width: 78%;
+    padding: 13px 16px;
+    border-radius: var(--radius);
+    font-size: 14.5px;
+    line-height: 1.65;
+  }
+  .msg.bot .bubble {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 4px 16px 16px 16px;
+    box-shadow: var(--shadow);
+  }
+  .msg.user .bubble {
+    background: var(--green-deep);
+    color: #fff;
+    border-radius: 16px 4px 16px 16px;
+    font-weight: 400;
+  }
+  .bubble p { margin-bottom: 6px; }
+  .bubble p:last-child { margin-bottom: 0; }
+  .bubble strong { font-weight: 600; }
+
+  /* ── RECIPE CARD ────────────────────────────── */
+  .recipe-card {
+    background: var(--green-mist);
+    border: 1px solid #c8e6d0;
+    border-radius: 12px;
+    padding: 14px;
+    margin-top: 10px;
+  }
+  .recipe-card .recipe-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: 16px;
+    color: var(--green-deep);
+    margin-bottom: 10px;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .recipe-meta {
+    display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px;
+  }
+  .tag {
+    background: var(--green-pale);
+    border: 1px solid #b8ddc4;
+    border-radius: 20px;
+    padding: 2px 10px;
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--green-deep);
+  }
+  .recipe-section-title {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--green-mid);
+    margin: 8px 0 4px;
+  }
+  .recipe-card ul { padding-left: 16px; }
+  .recipe-card li { font-size: 13.5px; margin-bottom: 3px; color: var(--ink); }
+  .recipe-step {
+    display: flex; gap: 8px; align-items: flex-start;
+    margin-bottom: 5px; font-size: 13.5px;
+  }
+  .step-num {
+    background: var(--green-mid);
+    color: #fff;
+    border-radius: 50%;
+    min-width: 20px; height: 20px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px; font-weight: 600;
+    flex-shrink: 0; margin-top: 1px;
+  }
+  .nutrition-grid {
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    gap: 6px; margin-top: 10px;
+  }
+  .nut-box {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 6px 8px;
+    text-align: center;
+  }
+  .nut-box .nut-val { font-size: 15px; font-weight: 600; color: var(--green-deep); }
+  .nut-box .nut-lbl { font-size: 10px; color: var(--ink-faint); margin-top: 1px; }
+
+  /* ── TYPING ─────────────────────────────────── */
+  .typing { display: flex; gap: 5px; align-items: center; padding: 2px 0; }
+  .typing span {
+    width: 7px; height: 7px;
+    background: var(--green-soft);
+    border-radius: 50%;
+    animation: bounce 1.1s infinite;
+  }
+  .typing span:nth-child(2) { animation-delay: .18s; }
+  .typing span:nth-child(3) { animation-delay: .36s; }
+  @keyframes bounce { 0%,60%,100%{transform:translateY(0)} 30%{transform:translateY(-7px)} }
+
+  /* ── SUGGESTIONS ────────────────────────────── */
+  #suggestions {
+    padding: 0 16px 10px;
+    display: flex; gap: 7px; flex-wrap: wrap;
+    max-width: 780px; margin: 0 auto; width: 100%;
+  }
+  .chip {
+    background: #fff;
+    border: 1px solid var(--border);
+    color: var(--green-deep);
+    padding: 6px 13px;
+    border-radius: 20px;
+    font-size: 12.5px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all .18s;
+    font-family: 'DM Sans', sans-serif;
+  }
+  .chip:hover { background: var(--green-pale); border-color: var(--green-soft); transform: translateY(-1px); }
+
+  /* ── INPUT ──────────────────────────────────── */
+  #input-wrap {
+    background: #fff;
+    border-top: 1px solid var(--border);
+    padding: 12px 16px 14px;
+    flex-shrink: 0;
+  }
+  .input-row {
+    display: flex; gap: 8px;
+    max-width: 780px; margin: 0 auto;
+    background: var(--green-mist);
+    border: 1.5px solid var(--border);
+    border-radius: 24px;
+    padding: 6px 6px 6px 16px;
+    transition: border-color .2s;
+  }
+  .input-row:focus-within { border-color: var(--green-soft); }
+  #txt {
+    flex: 1; border: none; background: transparent;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14.5px; color: var(--ink);
+    outline: none; padding: 6px 0;
+  }
+  #txt::placeholder { color: var(--ink-faint); }
+  #send {
+    background: var(--green-deep);
+    border: none; border-radius: 18px;
+    width: 40px; height: 40px;
+    color: #fff; font-size: 16px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: background .18s, transform .12s;
+    flex-shrink: 0;
+  }
+  #send:hover { background: var(--green-mid); transform: scale(1.05); }
+  #send:disabled { background: var(--ink-faint); transform: none; cursor: default; }
+  .footer-note {
+    text-align: center;
+    font-size: 10.5px;
+    color: var(--ink-faint);
+    margin-top: 7px;
+    max-width: 780px;
+    margin-left: auto; margin-right: auto;
+  }
+
+  /* ── ERROR ──────────────────────────────────── */
+  .error-box {
+    background: #fff5f5;
+    border: 1px solid #fcc;
+    border-radius: 10px;
+    padding: 12px 14px;
+    font-size: 13.5px;
+    color: #c0392b;
+    line-height: 1.7;
+  }
+  .error-box code {
+    background: #fee;
+    padding: 1px 5px;
+    border-radius: 4px;
+    font-size: 12px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-icon">🥗</div>
+  <div class="header-text">
+    <h1>NutriBot</h1>
+    <p>Asistente de Recetas Saludables y Nutrición</p>
+  </div>
+  <div class="header-right">
+    <span class="model-pill" id="model-label">Llama 3.2</span>
+    <div class="status-dot"></div>
+  </div>
+</header>
+
+<div id="chat"></div>
+
+<div id="suggestions">
+  <button class="chip" onclick="ask(this.textContent)">🥑 Receta alta en proteínas</button>
+  <button class="chip" onclick="ask(this.textContent)">🌱 Opción vegana rápida</button>
+  <button class="chip" onclick="ask(this.textContent)">⏱ Receta en 15 minutos</button>
+  <button class="chip" onclick="ask(this.textContent)">🔥 Calorías del aguacate</button>
+  <button class="chip" onclick="ask(this.textContent)">💪 Plan de desayuno saludable</button>
+  <button class="chip" onclick="ask(this.textContent)">🫀 Alimentos para el corazón</button>
+</div>
+
+<div id="input-wrap">
+  <div class="input-row">
+    <input id="txt" type="text" placeholder="Escribe tu pregunta sobre nutrición o recetas…" autocomplete="off"/>
+    <button id="send" onclick="send()">➤</button>
+  </div>
+  <p class="footer-note">NutriBot usa un LLM local vía Ollama · Dominio: Nutrición y Recetas Saludables · CINF104 Grupo 5 UNAB 2026</p>
+</div>
+
+<script>
+// ── CONFIG ──────────────────────────────────────────────────────────────────
+const OLLAMA_URL  = "http://localhost:11434/api/chat";
+const MODEL       = "llama3.2";   // cambia a "deepseek-r1:7b" si lo prefieren
+
+// ── BASE DE CONOCIMIENTO ────────────────────────────────────────────────────
+const KB = `
+=== DOMINIO: RECETAS SALUDABLES Y NUTRICIÓN ===
+
+--- RECETA 1 ---
+Nombre: Bowl de Quinoa con Verduras Asadas
+Ingredientes: 1 taza quinoa, 200g espinacas, 1 palta/aguacate, 1 tomate, 1 zanahoria rallada, jugo de 1 limón, 2 cdas aceite de oliva, sal, pimienta
+Preparación:
+  1. Lavar quinoa y cocinar en 2 tazas de agua con sal durante 15 min a fuego medio.
+  2. Saltear espinacas en aceite de oliva con ajo 2 min.
+  3. Asar zanahoria en horno a 200°C por 20 min.
+  4. Armar bowl: quinoa de base, espinacas, zanahoria, tomate y palta en cubos.
+  5. Aliñar con limón, aceite, sal y pimienta.
+Calorías: 420 kcal | Proteínas: 18g | Carbohidratos: 52g | Grasas: 18g
+Tiempo: 30 minutos | Porciones: 2
+Apto para: vegano, vegetariano, sin gluten, sin lactosa
+Tips: Agregar semillas de chía o linaza para más omega-3.
+
+--- RECETA 2 ---
+Nombre: Salmón al Horno con Brócoli y Limón
+Ingredientes: 200g filete de salmón, 300g brócoli, 3 dientes de ajo, 2 cdas aceite de oliva, jugo de 1 limón, ralladura de limón, sal, pimienta negra, eneldo
+Preparación:
+  1. Precalentar horno a 200°C.
+  2. Marinar salmón con ajo picado, limón, aceite, sal y pimienta 10 min.
+  3. Cortar brócoli en ramilletes y mezclar con aceite, sal y ajo.
+  4. Disponer salmón y brócoli en bandeja. Hornear 20-22 min.
+  5. Servir con ralladura de limón y eneldo fresco.
+Calorías: 380 kcal | Proteínas: 42g | Carbohidratos: 12g | Grasas: 18g
+Tiempo: 35 minutos | Porciones: 2
+Apto para: sin gluten, sin lactosa, keto-friendly, alto en proteínas
+Tips: El salmón está listo cuando se desmenuza fácilmente con un tenedor.
+
+--- RECETA 3 ---
+Nombre: Smoothie Verde Energético
+Ingredientes: 1 banana madura, 1 taza espinacas baby, 1 manzana verde, 1 trozo jengibre (1cm), 200ml leche de coco o agua, 1 cda semillas de chía, hielo al gusto
+Preparación:
+  1. Pelar banana y cortar manzana en trozos.
+  2. Colocar todos los ingredientes en licuadora.
+  3. Licuar 60 segundos hasta obtener mezcla homogénea.
+  4. Servir inmediatamente con hielo.
+Calorías: 210 kcal | Proteínas: 4g | Carbohidratos: 48g | Grasas: 3g
+Tiempo: 5 minutos | Porciones: 1
+Apto para: vegano, sin gluten, sin lactosa
+Tips: Congelar la banana antes para una textura más cremosa.
+
+--- RECETA 4 ---
+Nombre: Ensalada Mediterránea con Hummus Casero
+Ingredientes (ensalada): 200g garbanzos cocidos, 1 pepino, 200g tomates cherry, 80g aceitunas negras, 80g queso feta, hojas de menta fresca, 2 cdas aceite de oliva, jugo de limón
+Ingredientes (hummus): 200g garbanzos, 2 cdas tahini, 1 diente ajo, jugo de 1 limón, sal, aceite de oliva
+Preparación:
+  1. Para el hummus: procesar garbanzos, tahini, ajo, limón y sal. Agregar agua hasta consistencia cremosa.
+  2. Cortar pepino y tomates cherry en mitades.
+  3. Mezclar todos los ingredientes de ensalada en bol.
+  4. Aliñar con aceite de oliva y limón.
+  5. Servir con hummus al lado.
+Calorías: 350 kcal | Proteínas: 14g | Carbohidratos: 38g | Grasas: 16g
+Tiempo: 15 minutos | Porciones: 2
+Apto para: vegetariano, sin gluten
+
+--- RECETA 5 ---
+Nombre: Avena Nocturna con Frutos Rojos (Overnight Oats)
+Ingredientes: 1 taza avena tradicional, 200ml leche de almendras, 1 cda semillas de chía, 100g arándanos frescos o congelados, 50g frambuesas, 1 cda miel o maple syrup, 1/2 cdta vainilla, canela
+Preparación:
+  1. En un frasco, mezclar avena, leche de almendras, chía, vainilla y canela.
+  2. Refrigerar tapado durante al menos 6 horas (idealmente toda la noche).
+  3. Al servir, agregar frutos rojos frescos y miel.
+  4. Opcional: agregar una cda de crema de maní encima.
+Calorías: 320 kcal | Proteínas: 10g | Carbohidratos: 55g | Grasas: 7g
+Tiempo: 5 min prep + reposo nocturno | Porciones: 1
+Apto para: vegano, sin gluten (verificar avena certificada)
+
+--- RECETA 6 ---
+Nombre: Tortilla de Claras con Espinacas y Tomate
+Ingredientes: 5 claras de huevo, 1 yema, 100g espinacas, 1 tomate mediano, 1/4 cebolla morada, aceite de oliva en spray, sal, pimienta, orégano
+Preparación:
+  1. Picar cebolla y tomate en cubos pequeños.
+  2. Saltear cebolla en sartén antiadherente 2 min, agregar espinacas hasta marchitar.
+  3. Batir claras con yema, sal y pimienta.
+  4. Verter huevos sobre las verduras en la sartén a fuego medio.
+  5. Cuando cuaje por los bordes, doblar a la mitad. Servir con tomate fresco.
+Calorías: 180 kcal | Proteínas: 24g | Carbohidratos: 8g | Grasas: 5g
+Tiempo: 12 minutos | Porciones: 1
+Apto para: sin gluten, sin lactosa, alto en proteínas, bajo en calorías
+
+--- RECETA 7 ---
+Nombre: Curry de Lentejas Rojas con Cúrcuma
+Ingredientes: 200g lentejas rojas, 400ml leche de coco, 1 cebolla, 3 dientes ajo, 1 trozo jengibre, 2 cdas pasta de curry (o curry en polvo), 1 cdta cúrcuma, 1 cdta comino, tomates pelados en lata, sal, cilantro fresco
+Preparación:
+  1. Sofreír cebolla y ajo en aceite 4 min.
+  2. Agregar jengibre rallado, curry, cúrcuma y comino. Cocinar 1 min.
+  3. Añadir lentejas, tomates y leche de coco. Mezclar bien.
+  4. Cocinar a fuego bajo 25-30 min hasta que lentejas estén tiernas.
+  5. Rectificar sal y servir con cilantro fresco y arroz integral.
+Calorías: 390 kcal | Proteínas: 22g | Carbohidratos: 48g | Grasas: 12g
+Tiempo: 40 minutos | Porciones: 3-4
+Apto para: vegano, sin gluten, sin lactosa, alto en fibra
+
+=== INFORMACIÓN NUTRICIONAL DE ALIMENTOS ===
+Aguacate/Palta (100g): 160 kcal, 2g proteína, 9g carbohidratos, 15g grasa saludable (monoinsaturada), potasio, vitamina K, folato
+Quinoa (100g cocida): 120 kcal, 4.4g proteína (proteína completa con todos los aminoácidos), 21g carbohidratos, 1.9g grasa, fibra, hierro, magnesio
+Espinaca (100g cruda): 23 kcal, 2.9g proteína, 3.6g carbohidratos, 0.4g grasa, hierro no hemo, vitamina C, K, folato
+Salmón (100g): 208 kcal, 28g proteína, 0g carbohidratos, 10g grasa (ácidos grasos omega-3 EPA y DHA), vitamina D, B12
+Garbanzo (100g cocido): 164 kcal, 8.9g proteína, 27g carbohidratos, 2.6g grasa, fibra soluble, hierro, zinc
+Avena (100g seca): 389 kcal, 17g proteína, 66g carbohidratos, 7g grasa, betaglucanos (fibra soluble que baja el colesterol)
+Banana (1 mediana): 89 kcal, 1.1g proteína, 23g carbohidratos, 0.3g grasa, potasio, vitamina B6, magnesio
+Brócoli (100g): 34 kcal, 2.8g proteína, 7g carbohidratos, 0.4g grasa, vitamina C (89mg, 99% CDR), K, sulforafano (anticancerígeno)
+Lentejas (100g cocidas): 116 kcal, 9g proteína, 20g carbohidratos, 0.4g grasa, hierro, folato, fibra
+Tomate (100g): 18 kcal, 0.9g proteína, 3.9g carbohidratos, 0.2g grasa, licopeno, vitamina C
+
+=== PRINCIPIOS NUTRICIONALES ===
+Proteína recomendada: 0.8g/kg peso corporal (sedentario), 1.2-1.6g/kg (actividad moderada), 1.6-2.2g/kg (atletas)
+Hidratación: mínimo 2 litros de agua al día (más si hay actividad física o clima caluroso)
+Plato saludable Harvard: 50% verduras y frutas, 25% proteína magra, 25% cereales integrales, aceites saludables con moderación
+Grasas saludables: aguacate, frutos secos, aceite de oliva virgen extra, pescado azul, semillas
+Azúcares: máximo 25-50g/día según OMS; preferir frutas frescas sobre jugos
+Fibra: 25-38g/día; fuentes: legumbres, cereales integrales, frutas y verduras con cáscara
+Índice glucémico: preferir alimentos de bajo IG (legumbres, avena, la mayoría de verduras) para mantener energía estable
+Antioxidantes: comer alimentos de distintos colores (arándanos, espinacas, tomates, pimientos naranja) para variedad de fitonutrientes
+
+=== PLANES ALIMENTICIOS ===
+Plan Desayuno Saludable (semana):
+  Lunes: Avena nocturna con frutos rojos y chía
+  Martes: Tortilla de claras con espinacas y tostada integral
+  Miércoles: Smoothie verde energético + 2 huevos duros
+  Jueves: Yogur griego con granola sin azúcar y kiwi
+  Viernes: Avena caliente con banana y canela
+  Sábado: Bowl de acai con frutos del bosque y granola
+  Domingo: Tostadas integrales con aguacate y huevo pochado
+
+Plan Alto en Proteínas (por comida):
+  Desayuno (30g proteína): Tortilla de 4 claras + 100g requesón + fruta
+  Almuerzo (40g proteína): Salmón al horno 200g + quinoa + brócoli
+  Cena (30g proteína): Pechuga de pollo 150g + ensalada grande + legumbres
+  Snacks: Puñado de almendras (6g) + yogur griego (17g)
+`;
+
+// ── SYSTEM PROMPT ────────────────────────────────────────────────────────────
+const SYSTEM = `Eres NutriBot, un asistente experto en nutrición y recetas saludables para hispanohablantes. Tienes una personalidad cálida, motivadora y práctica.
+
+CONOCIMIENTO BASE:
+${KB}
+
+REGLAS DE COMPORTAMIENTO:
+1. Responde SIEMPRE en español claro y amigable.
+2. Cuando pidan una receta específica del conocimiento base, presenta: nombre, ingredientes, pasos numerados, valores nutricionales y tips.
+3. Para preguntas nutricionales, da cifras concretas del conocimiento base.
+4. Si el usuario tiene restricciones dietarias (vegano, sin gluten, diabetes, etc.), filtra y adapta.
+5. Para preguntas fuera del dominio de nutrición y recetas, indica amablemente que tu especialidad es la nutrición y redirige.
+6. Sé conciso: máximo 150 palabras en respuestas generales. Puedes extenderte solo para recetas completas.
+7. Termina cada respuesta con un tip o dato nutricional útil breve.
+8. NO inventes datos nutricionales que no estén en tu base de conocimiento. Sé honesto si no tienes el dato exacto.`;
+
+// ── ESTADO ───────────────────────────────────────────────────────────────────
+let history = [];
+let busy    = false;
+
+// ── UI HELPERS ───────────────────────────────────────────────────────────────
+const chat = document.getElementById('chat');
+const txt  = document.getElementById('txt');
+const send = document.getElementById('send');
+
+function scrollBottom() { chat.scrollTop = chat.scrollHeight; }
+
+function addMsg(role, html) {
+  document.getElementById('suggestions').style.display = 'none';
+  const wrap = document.createElement('div');
+  wrap.className = `msg ${role}`;
+  const av = document.createElement('div');
+  av.className = `avatar ${role === 'user' ? 'user' : 'bot'}`;
+  av.textContent = role === 'user' ? '👤' : '🥗';
+  const bub = document.createElement('div');
+  bub.className = 'bubble';
+  bub.innerHTML = html;
+  wrap.appendChild(av);
+  wrap.appendChild(bub);
+  chat.appendChild(wrap);
+  scrollBottom();
+  return bub;
+}
+
+function showTyping() {
+  const d = document.createElement('div');
+  d.className = 'msg bot'; d.id = 'typing';
+  d.innerHTML = `<div class="avatar bot">🥗</div><div class="bubble"><div class="typing"><span></span><span></span><span></span></div></div>`;
+  chat.appendChild(d); scrollBottom();
+}
+function hideTyping() { document.getElementById('typing')?.remove(); }
+
+// ── FORMAT RESPONSE ──────────────────────────────────────────────────────────
+function formatResponse(text) {
+  // Detect structured recipe response
+  const isRecipe = /ingredientes|preparaci[oó]n|paso\s*\d|calorías/i.test(text);
+  if (isRecipe) {
+    return `<div>${text.split('\n').map(l => l.trim()).filter(Boolean).map(l => {
+      if (/^\d+\./.test(l)) return `<div class="recipe-step"><span class="step-num">${l.match(/^\d+/)[0]}</span><span>${l.replace(/^\d+\.\s*/,'')}</span></div>`;
+      if (/^(ingredientes|preparaci[oó]n|pasos|valores?|nutrici[oó]n|tip)/i.test(l)) return `<p class="recipe-section-title">${l}</p>`;
+      if (/^[-•]/.test(l)) return `<p>• ${l.slice(1).trim()}</p>`;
+      return `<p>${l}</p>`;
+    }).join('')}</div>`;
+  }
+  // Regular text: convert markdown-like bold and newlines
+  return text
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g, '<em>$1</em>')
+    .split('\n').filter(l => l.trim())
+    .map(l => `<p>${l}</p>`).join('');
+}
+
+// ── OLLAMA CALL ──────────────────────────────────────────────────────────────
+async function callOllama(userMsg) {
+  history.push({ role: 'user', content: userMsg });
+  // Keep last 12 turns to avoid context overflow
+  const slice = history.slice(-12);
+
+  const res = await fetch(OLLAMA_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: MODEL,
+      messages: [{ role: 'system', content: SYSTEM }, ...slice],
+      stream: false,
+      options: { temperature: 0.7, top_p: 0.9, num_predict: 700 }
+    })
+  });
+
+  if (!res.ok) throw new Error(`HTTP ${res.status} — ¿Está Ollama corriendo?`);
+  const data = await res.json();
+  const reply = data.message?.content || 'Sin respuesta del modelo.';
+  history.push({ role: 'assistant', content: reply });
+  return reply;
+}
+
+// ── SEND ─────────────────────────────────────────────────────────────────────
+async function send_msg(userMsg) {
+  if (busy || !userMsg.trim()) return;
+  busy = true; send.disabled = true;
+
+  addMsg('user', `<p>${userMsg}</p>`);
+  txt.value = '';
+  showTyping();
+
+  try {
+    const reply = await callOllama(userMsg);
+    hideTyping();
+    addMsg('bot', formatResponse(reply));
+  } catch (e) {
+    hideTyping();
+    addMsg('bot', `<div class="error-box">
+      ⚠️ <strong>No se pudo conectar con Ollama.</strong><br><br>
+      Sigue estos pasos:<br>
+      1. Instala Ollama: <a href="https://ollama.com/download" target="_blank">ollama.com/download</a><br>
+      2. Abre terminal y ejecuta: <code>ollama pull llama3.2</code><br>
+      3. Luego: <code>ollama serve</code><br>
+      4. Recarga esta página.<br><br>
+      Error técnico: ${e.message}
+    </div>`);
+  }
+
+  busy = false; send.disabled = false; txt.focus();
+}
+
+function send() { send_msg(txt.value.trim()); }
+function ask(t) { send_msg(t); }
+
+txt.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } });
+
+// ── WELCOME ───────────────────────────────────────────────────────────────────
+window.addEventListener('load', () => {
+  addMsg('bot', `
+    <p>¡Hola! 👋 Soy <strong>NutriBot</strong>, tu asistente de recetas saludables y nutrición.</p>
+    <p>Puedo ayudarte con:</p>
+    <p>🥗 <strong>7 recetas saludables</strong> completas paso a paso<br>
+    📊 <strong>Información nutricional</strong> de 10+ alimentos<br>
+    🎯 <strong>Planes de alimentación</strong> semanales<br>
+    🌱 Filtrado por dieta: vegano, sin gluten, keto, alto en proteínas</p>
+    <p>¿Sobre qué te puedo ayudar hoy?</p>
+  `);
+});
+</script>
+</body>
+</html>
